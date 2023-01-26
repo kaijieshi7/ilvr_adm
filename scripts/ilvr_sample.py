@@ -70,19 +70,37 @@ def main():
         image_size=args.image_size,
         class_cond=args.class_cond,
     )
+    data_exe = load_reference(
+        args.base_samples_exe,#修改
+        args.batch_size,
+        image_size=args.image_size,
+        class_cond=args.class_cond,
+    )
+    data_mask = load_reference(
+        args.base_samples_mask,  # 修改
+        args.batch_size,
+        image_size=args.image_size,
+        class_cond=args.class_cond,
+    )
 
     logger.log("creating samples...")
     count = 0
     while count * args.batch_size < args.num_samples:
         model_kwargs = next(data)
         model_kwargs = {k: v.to(dist_util.dev()) for k, v in model_kwargs.items()}
+        model_kwargs_exe = next(data_exe)
+        model_kwargs_exe = {k: v.to(dist_util.dev()) for k, v in model_kwargs_exe.items()}
+        model_kwargs_mask = next(data_mask)
+        model_kwargs_mask = {k: v.to(dist_util.dev()) for k, v in model_kwargs_mask.items()}
         sample = diffusion.p_sample_loop(
             model,
             (args.batch_size, 3, args.image_size, args.image_size),
             clip_denoised=args.clip_denoised,
             model_kwargs=model_kwargs,
+            model_kwargs_exe=model_kwargs_exe,
             resizers=resizers,
-            range_t=args.range_t
+            range_t=args.range_t,
+            mask=model_kwargs_mask,
         )
 
         for i in range(args.batch_size):
@@ -107,11 +125,14 @@ def create_argparser():
     defaults = dict(
         clip_denoised=True,
         num_samples=10000,
-        batch_size=4,
+        # batch_size=4,
+        batch_size=1,#应该没有影响
         down_N=32,
         range_t=0,
         use_ddim=False,
         base_samples="",
+        base_samples_exe="",
+        base_samples_mask="",
         model_path="",
         save_dir="",
         save_latents=False,

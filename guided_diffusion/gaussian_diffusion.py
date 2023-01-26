@@ -425,7 +425,7 @@ class GaussianDiffusion:
             t,
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
-            model_kwargs=model_kwargs,
+            model_kwargs=model_kwargs, #这里可能需要修改
         )
         noise = th.randn_like(x)
         nonzero_mask = (
@@ -447,9 +447,11 @@ class GaussianDiffusion:
         denoised_fn=None,
         cond_fn=None,
         model_kwargs=None,
+        model_kwargs_exe=None,
         device=None,
         progress=False,
         resizers=None,
+        mask=None,
         range_t=0,
     ):
         """
@@ -480,9 +482,11 @@ class GaussianDiffusion:
             denoised_fn=denoised_fn,
             cond_fn=cond_fn,
             model_kwargs=model_kwargs,
+            model_kwargs_exe=model_kwargs_exe,
             device=device,
             progress=progress,
             resizers=resizers,
+            mask=mask,
             range_t=range_t,
         ):
             final = sample
@@ -500,9 +504,11 @@ class GaussianDiffusion:
         denoised_fn=None,
         cond_fn=None,
         model_kwargs=None,
+        model_kwargs_exe=None,
         device=None,
         progress=False,
         resizers=None,
+        mask = None,
         range_t=0,
     ):
         """
@@ -547,9 +553,22 @@ class GaussianDiffusion:
                 #### ILVR ####
                 if resizers is not None:
                     if i > range_t:
-                        out["sample"] = out["sample"] - up(down(out["sample"])) + up(
-                            down(self.q_sample(model_kwargs["ref_img"], t, th.randn(*shape, device=device))))
+                        # (1-phi) x prime (t-1)
+                        kj_temp2 = out["sample"] - up(down(out["sample"]))
+                        # y (t-1)
+                        y_t_1 = self.q_sample(model_kwargs["ref_img"], t, th.randn(*shape, device=device))
+                        # z (t-1)
+                        z_t_1 = self.q_sample(model_kwargs_exe["ref_img"], t, th.randn(*shape, device=device))
 
+                        mask_2 = mask['ref_img'][:, 0:1, :, :]
+                        mask_2[mask_2>0]=1
+                        mask_2[mask_2<0]=0
+                        # print(th.unique(mask)) #因为插值了，所以有很多值
+                        kj_temp1 = mask_2*(y_t_1)+(1-mask_2)*(z_t_1)
+                        out["sample"] = up(down(kj_temp1)) + kj_temp2
+                        # out["sample"] = out["sample"] - up(down(out["sample"])) + up(
+                        #     down(self.q_sample(model_kwargs["ref_img"], t, th.randn(*shape, device=device))))
+                        # 这里需要修改
                 yield out
                 img = out["sample"]
 

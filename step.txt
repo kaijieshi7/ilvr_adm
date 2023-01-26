@@ -1,0 +1,8 @@
+1. 新建conda环境，按照https://github.com/openai/improved-diffusion 里面的pip install -e .安装
+2. 装torch和torch vision
+
+脚本运行
+1.测试用 python scripts/ilvr_sample.py  --attention_resolutions 16 --class_cond False --diffusion_steps 1000 --dropout 0.0 --image_size 256 --learn_sigma True --noise_schedule linear --num_channels 128 --num_head_channels 64 --num_res_blocks 1 --resblock_updown True --use_fp16 False --use_scale_shift_norm True --timestep_respacing 100 --model_path models/ffhq_p2.pt --base_samples ref_imgs/face --down_N 32 --range_t 20 --save_dir save_dir_my
+2. gaussian_diffusion.py 428行如何处理？
+3. mask的计算可能存在有问题，加载进来是三通道
+    在 image_datasets.py 118行 arr = arr.astype(np.float32) / 127.5 - 1。导致掩码缩放了，所以重新缩放回去。 但是又因为是二值化，所以不缩放，直接二值判断
