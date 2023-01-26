@@ -564,7 +564,8 @@ class GaussianDiffusion:
                         mask_2[mask_2>0]=1
                         mask_2[mask_2<0]=0
                         # print(th.unique(mask)) #因为插值了，所以有很多值
-                        kj_temp1 = mask_2*(y_t_1)+(1-mask_2)*(z_t_1)
+                        # kj_temp1 = mask_2*(y_t_1)+(1-mask_2)*(z_t_1)
+                        kj_temp1 = mask_2*(z_t_1)+(1-mask_2)*(y_t_1)
                         out["sample"] = up(down(kj_temp1)) + kj_temp2
                         # out["sample"] = out["sample"] - up(down(out["sample"])) + up(
                         #     down(self.q_sample(model_kwargs["ref_img"], t, th.randn(*shape, device=device))))
